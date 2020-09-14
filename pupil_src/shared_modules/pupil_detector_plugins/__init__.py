@@ -34,9 +34,9 @@ def available_detector_plugins() -> T.Tuple[
     try:
         from .pye3d_plugin import Pye3DPlugin
     except ImportError:
-        logging.info("Refraction corrected 3D pupil detector not available!")
+        logger.info("Refraction corrected 3D pupil detector not available!")
     else:
-        logging.info("Using refraction corrected 3D pupil detector.")
+        logger.info("Using refraction corrected 3D pupil detector.")
         all_plugins.append(Pye3DPlugin)
         default3D = Pye3DPlugin
 
