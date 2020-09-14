@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 def available_detector_plugins() -> T.Tuple[
-    PupilDetectorPlugin, PupilDetectorPlugin, T.List[PupilDetectorPlugin]
+    T.Optional[PupilDetectorPlugin],
+    T.Optional[PupilDetectorPlugin],
+    T.List[PupilDetectorPlugin],
 ]:
     """Load and list available plugins, including default
 
