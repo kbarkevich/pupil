@@ -14,6 +14,8 @@ from pupil_detectors import Detector2D, DetectorBase, Roi
 from pyglui import ui
 from pyglui.cygl.utils import draw_gl_texture
 
+import numpy as np
+
 import glfw
 from gl_utils import (
     adjust_gl_view,
@@ -27,6 +29,8 @@ from plugin import Plugin
 
 from .detector_base_plugin import PropertyProxy, PupilDetectorPlugin
 from .visualizer_2d import draw_pupil_outline
+
+from RITnet.image import get_mask_from_PIL_image, init_model
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +50,19 @@ class Detector2DPlugin(PupilDetectorPlugin):
         super().__init__(g_pool=g_pool)
         self.detector_2d = detector_2d or Detector2D(namespaced_properties or {})
         self.proxy = PropertyProxy(self.detector_2d)
+        self.model = init_model()
 
     def detect(self, frame, **kwargs):
         # convert roi-plugin to detector roi
         roi = Roi(*self.g_pool.roi.bounds)
-
+        useRITnet = self.g_pool.ritnet_2d
+        
+        img = frame.gray
+        if useRITnet:
+            img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
         debug_img = frame.bgr if self.g_pool.display_mode == "algorithm" else None
         result = self.detector_2d.detect(
-            gray_img=frame.gray,
+            gray_img=img,
             color_img=debug_img,
             roi=roi,
         )
@@ -118,5 +127,12 @@ class Detector2DPlugin(PupilDetectorPlugin):
                 min=50,
                 max=400,
                 step=1,
+            )
+        )
+        self.menu.append(
+            ui.Switch(
+                "ritnet_2d",
+                self.g_pool,
+                label="Enable RITnet"
             )
         )

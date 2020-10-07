@@ -198,6 +198,8 @@ def eye(
 
         g_pool.get_timestamp = get_timestamp
         g_pool.get_now = get_time_monotonic
+        
+        g_pool.ritnet_2d = False
 
         default_2d, default_3d, available_detectors = available_detector_plugins()
         plugins = manager_classes + source_classes + available_detectors + [Roi]
