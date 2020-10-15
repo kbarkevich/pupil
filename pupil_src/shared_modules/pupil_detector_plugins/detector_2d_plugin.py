@@ -30,7 +30,7 @@ from plugin import Plugin
 from .detector_base_plugin import PropertyProxy, PupilDetectorPlugin
 from .visualizer_2d import draw_pupil_outline
 
-from RITnet.image import get_mask_from_PIL_image, init_model
+from RITnet.image import get_mask_from_PIL_image, init_model, get_pupil_ellipse_from_PIL_image
 
 logger = logging.getLogger(__name__)
 
@@ -59,13 +59,47 @@ class Detector2DPlugin(PupilDetectorPlugin):
         
         img = frame.gray
         if useRITnet:
-            img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
-        debug_img = frame.bgr if self.g_pool.display_mode == "algorithm" else None
-        result = self.detector_2d.detect(
-            gray_img=img,
-            color_img=debug_img,
-            roi=roi,
-        )
+            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model)
+            # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
+            if ellipsedata is not None:
+                result = {}
+                ellipse = {}
+                ellipse["center"] = (ellipsedata[0], ellipsedata[1])
+                ellipse["axes"] = (ellipsedata[2]*2, ellipsedata[3]*2)
+                ellipse["angle"] = ellipsedata[4]
+                result["ellipse"] = ellipse
+                result["diameter"] = ellipsedata[2]*2
+                result["location"] = ellipse["center"]
+                result["confidence"] = 0.99
+            else:
+                result = {}
+                ellipse = {}
+                ellipse["center"] = (0.0, 0.0)
+                ellipse["axes"] = (0.0, 0.0)
+                ellipse["angle"] = 0.0
+                result["ellipse"] = ellipse
+                result["diameter"] = 0.0
+                result["location"] = ellipse["center"]
+                result["confidence"] = 0.0
+        else:
+            debug_img = frame.bgr if self.g_pool.display_mode == "algorithm" else None
+            result = self.detector_2d.detect(
+                gray_img=img,
+                color_img=debug_img,
+                roi=roi,
+            )
+        
+        print("-----------------")
+        for key, value in result.items():
+            #print(key + ": " + str(type(value)))
+            if not isinstance(value, dict) and not isinstance(value, bytes):
+                print(key + ": " + str(value))
+            elif isinstance(value, dict):
+                print(key + ":")
+                for key2, value2 in value.items():
+                    print("- " + key2 + ": " + str(value2))
+            else:
+                print(key + ": " + str(type(value)))
         eye_id = self.g_pool.eye_id
         location = result["location"]
         result["norm_pos"] = normalize(
