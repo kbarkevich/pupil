@@ -114,6 +114,18 @@ class Detector3DPlugin(PupilDetectorPlugin):
             debug=self.is_debug_window_open,
             internal_raw_2d_data=kwargs.get("internal_raw_2d_data", None),
         )
+        print(kwargs.get("internal_raw_2d_data", None))
+        #print("-----------------")
+        #for key, value in result.items():
+        #    #print(key + ": " + str(type(value)))
+        #    if not isinstance(value, dict) and not isinstance(value, bytes):
+        #        print(key + ": " + str(value))
+        #    elif isinstance(value, dict):
+        #        print(key + ":")
+        #        for key2, value2 in value.items():
+        #            print("- " + key2 + ": " + str(value2))
+        #    else:
+        #        print(key + ": " + str(type(value)))
 
         eye_id = self.g_pool.eye_id
         location = result["location"]

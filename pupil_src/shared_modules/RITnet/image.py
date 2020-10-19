@@ -17,6 +17,13 @@ from utils import get_predictions
 from PIL import Image
 from helperfunctions import get_pupil_parameters
 
+# CYTHON IMPORTING
+import pyximportcpp;
+pyximportcpp.install()
+
+from result_2d_reserializer import get_serialized_string
+
+
 def init_model(devicestr="cuda"):
     device = torch.device(devicestr)
     model = model_dict["densenet"]
@@ -88,11 +95,12 @@ def get_pupil_ellipse_from_cv2_image(image, model, useGpu=True):
     data = img.to(device)   
     output = model(data)
     predict = get_predictions(output)
-    return get_pupil_parameters(predict[0].numpy())
+    parameters = get_pupil_parameters(predict[0].numpy())
+    return parameters, get_serialized_string(parameters)
     
 def get_pupil_ellipse_from_PIL_image(pilimage, model, useGpu=True):
     img = process_PIL_image(pilimage)
-    res = get_pupil_ellipse_from_cv2_image(img, model, useGpu)
+    res, serialized = get_pupil_ellipse_from_cv2_image(img, model, useGpu)
     if res is not None:
-        res[4] = res[4] * 180 / np.pi
-    return res
+        res[4] = res[4] * 180.0 / np.pi
+    return res, serialized

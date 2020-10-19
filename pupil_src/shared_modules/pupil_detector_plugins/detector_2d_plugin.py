@@ -59,7 +59,8 @@ class Detector2DPlugin(PupilDetectorPlugin):
         
         img = frame.gray
         if useRITnet:
-            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model)
+            ellipsedata, serialized = get_pupil_ellipse_from_PIL_image(img, self.model)
+            print(serialized)
             # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
             if ellipsedata is not None:
                 result = {}
@@ -89,17 +90,17 @@ class Detector2DPlugin(PupilDetectorPlugin):
                 roi=roi,
             )
         
-        print("-----------------")
-        for key, value in result.items():
-            #print(key + ": " + str(type(value)))
-            if not isinstance(value, dict) and not isinstance(value, bytes):
-                print(key + ": " + str(value))
-            elif isinstance(value, dict):
-                print(key + ":")
-                for key2, value2 in value.items():
-                    print("- " + key2 + ": " + str(value2))
-            else:
-                print(key + ": " + str(type(value)))
+        # print("-----------------")
+        # for key, value in result.items():
+        #     #print(key + ": " + str(type(value)))
+        #     if not isinstance(value, dict) and not isinstance(value, bytes):
+        #         print(key + ": " + str(value))
+        #     elif isinstance(value, dict):
+        #         print(key + ":")
+        #         for key2, value2 in value.items():
+        #             print("- " + key2 + ": " + str(value2))
+        #     else:
+        #         print(key + ": " + str(type(value)))
         eye_id = self.g_pool.eye_id
         location = result["location"]
         result["norm_pos"] = normalize(
