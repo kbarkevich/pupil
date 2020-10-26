@@ -42,9 +42,9 @@ class Pye3DPlugin(PupilDetectorPlugin):
             if datum.get("method", "") == "2d c++":
                 datum_2d = datum
                 break
-        else:
-            # TODO: make this more stable!
-            raise RuntimeError("No 2D detection result! Needed for pye3D!")
+            else:
+                # TODO: make this more stable!
+                raise RuntimeError("No 2D detection result! Needed for pye3D!")
 
         datum_2d["raw_edges"] = []
         result = self.detector.update_and_detect(

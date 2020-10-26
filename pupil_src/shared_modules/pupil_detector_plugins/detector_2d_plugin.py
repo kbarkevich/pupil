@@ -60,7 +60,6 @@ class Detector2DPlugin(PupilDetectorPlugin):
         img = frame.gray
         if useRITnet:
             ellipsedata, serialized = get_pupil_ellipse_from_PIL_image(img, self.model)
-            print(serialized)
             # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
             if ellipsedata is not None:
                 result = {}
@@ -110,6 +109,7 @@ class Detector2DPlugin(PupilDetectorPlugin):
         result["topic"] = f"pupil.{eye_id}.{self.identifier}"
         result["id"] = eye_id
         result["method"] = "2d c++"
+        #result["previous_detection_results"] = result.copy()
         return result
 
     @property

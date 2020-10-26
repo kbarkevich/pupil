@@ -114,7 +114,7 @@ class Detector3DPlugin(PupilDetectorPlugin):
             debug=self.is_debug_window_open,
             internal_raw_2d_data=kwargs.get("internal_raw_2d_data", None),
         )
-        print(kwargs.get("internal_raw_2d_data", None))
+        # print(kwargs.get("internal_raw_2d_data", None))
         #print("-----------------")
         #for key, value in result.items():
         #    #print(key + ": " + str(type(value)))
