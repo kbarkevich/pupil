@@ -59,7 +59,7 @@ class Detector2DPlugin(PupilDetectorPlugin):
         
         img = frame.gray
         if useRITnet:
-            ellipsedata, serialized = get_pupil_ellipse_from_PIL_image(img, self.model)
+            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model)
             # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
             if ellipsedata is not None:
                 result = {}
