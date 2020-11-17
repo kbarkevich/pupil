@@ -19,11 +19,11 @@ from PIL import Image
 from helperfunctions import get_pupil_parameters
 from skimage import io, measure
 
-def init_model(devicestr="cuda"):
+def init_model(devicestr="cuda", modelname="best_model.pkl"):
     device = torch.device(devicestr)
     model = model_dict["densenet"]
     model  = model.to(device)
-    filename = os.path.dirname(os.path.abspath(__file__)) + "/ritnet_pupil.pkl";
+    filename = os.path.dirname(os.path.abspath(__file__)) + "/"+modelname;
         
     model.load_state_dict(torch.load(filename))
     model = model.to(device)
@@ -106,7 +106,7 @@ def get_mask_from_PIL_image(pilimage, model, useGpu=True, pupilOnly=False, inclu
     img = process_PIL_image(pilimage)
     return get_mask_from_cv2_image(img, model, useGpu, pupilOnly, includeRawPredict, channels, trim_pupil)
     
-def get_pupil_ellipse_from_cv2_image(image, model, useGpu=True, predict=None):
+def get_pupil_ellipse_from_cv2_image(image, model, useGpu=True, predict=None, trim_pupil=False, channels=3):
     if useGpu:
         device=torch.device("cuda")
     else:
@@ -117,13 +117,33 @@ def get_pupil_ellipse_from_cv2_image(image, model, useGpu=True, predict=None):
         data = img.to(device)   
         output = model(data)
         predict = get_predictions(output)
-        pred_img = predict[0].numpy()
-        
-    return get_pupil_parameters(pred_img)
     
-def get_pupil_ellipse_from_PIL_image(pilimage, model, useGpu=True, predict=None):
+    pred_img = predict[0].numpy()
+
+    # trim pupil if asked to
+    if trim_pupil:
+        newimg = np.invert(pred_img>0)
+        labeled_img = measure.label(newimg)
+        labels = np.unique(labeled_img)
+        newimg = np.zeros((newimg.shape[0],newimg.shape[1]))
+        old_sum = 0
+        old_label = None
+        for label in (y for y in labels if y != 0):
+            if np.sum(labeled_img==label) > old_sum:
+                old_sum = np.sum(labeled_img==label)
+                old_label = label
+        if old_label is not None:
+            newimg = newimg + (labeled_img == old_label)
+        newimg[newimg == 0] = 2
+        newimg[newimg == 1] = 0
+        newimg[newimg == 2] = 1
+        pred_img[pred_img == 0] = 1-(1/channels)
+        pred_img[newimg == 0] = 0
+    return get_pupil_parameters(pred_img, channels==4)
+    
+def get_pupil_ellipse_from_PIL_image(pilimage, model, useGpu=True, predict=None, trim_pupil=False, channels=3):
     img = process_PIL_image(pilimage)
-    res = get_pupil_ellipse_from_cv2_image(img, model, useGpu, predict)
+    res = get_pupil_ellipse_from_cv2_image(img, model, useGpu, predict, trim_pupil, channels)
     if res is not None:
         res[4] = res[4] * 180 / np.pi
     return res

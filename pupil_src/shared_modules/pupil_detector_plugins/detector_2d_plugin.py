@@ -50,8 +50,9 @@ class Detector2DPlugin(PupilDetectorPlugin):
         super().__init__(g_pool=g_pool)
         self.detector_2d = detector_2d or Detector2D(namespaced_properties or {})
         self.proxy = PropertyProxy(self.detector_2d)
-        self.model = init_model()
-
+        self.model = init_model(modelname="best_model.pkl")
+        self.model_channels = 4
+        
     def detect(self, frame, **kwargs):
         # convert roi-plugin to detector roi
         roi = Roi(*self.g_pool.roi.bounds)
@@ -59,7 +60,7 @@ class Detector2DPlugin(PupilDetectorPlugin):
         
         img = frame.gray
         if useRITnet:
-            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model)
+            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model, trim_pupil=False, channels=self.model_channels)
             # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
             if ellipsedata is not None:
                 result = {}
