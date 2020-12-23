@@ -33,8 +33,6 @@ from plugin import Plugin
 from .detector_base_plugin import PupilDetectorPlugin
 from .visualizer_2d import draw_pupil_outline
 
-from RITnet.image import get_mask_from_PIL_image, init_model, get_pupil_ellipse_from_PIL_image
-
 logger = logging.getLogger(__name__)
 
 
@@ -134,13 +132,6 @@ class Detector2DPlugin(PupilDetectorPlugin):
                 min=50,
                 max=400,
                 step=1,
-            )
-        )
-        self.menu.append(
-            ui.Switch(
-                "ritnet_2d",
-                self.g_pool,
-                label="Enable RITnet"
             )
         )
 
