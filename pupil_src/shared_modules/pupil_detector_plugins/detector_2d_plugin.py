@@ -17,6 +17,9 @@ from pyglui.cygl.utils import draw_gl_texture
 import numpy as np
 
 import glfw
+
+glfw.ERROR_REPORTING = "raise"
+
 from gl_utils import (
     adjust_gl_view,
     basic_gl_setup,
@@ -27,7 +30,7 @@ from gl_utils import (
 from methods import normalize
 from plugin import Plugin
 
-from .detector_base_plugin import PropertyProxy, PupilDetectorPlugin
+from .detector_base_plugin import PupilDetectorPlugin
 from .visualizer_2d import draw_pupil_outline
 
 from RITnet.image import get_mask_from_PIL_image, init_model, get_pupil_ellipse_from_PIL_image
@@ -36,94 +39,62 @@ logger = logging.getLogger(__name__)
 
 
 class Detector2DPlugin(PupilDetectorPlugin):
-    uniqueness = "by_class"
-    icon_font = "pupil_icons"
-    icon_chr = chr(0xEC18)
+
+    pupil_detection_identifier = "2d"
+    pupil_detection_method = "2d c++"
 
     label = "C++ 2d detector"
-    identifier = "2d"
+    icon_font = "pupil_icons"
+    icon_chr = chr(0xEC18)
     order = 0.100
-
-    def __init__(
-        self, g_pool=None, namespaced_properties=None, detector_2d: Detector2D = None
-    ):
-        super().__init__(g_pool=g_pool)
-        self.detector_2d = detector_2d or Detector2D(namespaced_properties or {})
-        self.proxy = PropertyProxy(self.detector_2d)
-        self.model = init_model(modelname="best_model.pkl")
-        self.model_channels = 4
-        
-    def detect(self, frame, **kwargs):
-        # convert roi-plugin to detector roi
-        roi = Roi(*self.g_pool.roi.bounds)
-        useRITnet = self.g_pool.ritnet_2d
-        
-        img = frame.gray
-        if useRITnet:
-            ellipsedata = get_pupil_ellipse_from_PIL_image(img, self.model, trim_pupil=False, channels=self.model_channels)
-            # img = np.uint8(get_mask_from_PIL_image(img, self.model) * 255)
-            if ellipsedata is not None:
-                result = {}
-                ellipse = {}
-                ellipse["center"] = (ellipsedata[0], ellipsedata[1])
-                ellipse["axes"] = (ellipsedata[2]*2, ellipsedata[3]*2)
-                ellipse["angle"] = ellipsedata[4]
-                result["ellipse"] = ellipse
-                result["diameter"] = ellipsedata[2]*2
-                result["location"] = ellipse["center"]
-                result["confidence"] = 0.99
-            else:
-                result = {}
-                ellipse = {}
-                ellipse["center"] = (0.0, 0.0)
-                ellipse["axes"] = (0.0, 0.0)
-                ellipse["angle"] = 0.0
-                result["ellipse"] = ellipse
-                result["diameter"] = 0.0
-                result["location"] = ellipse["center"]
-                result["confidence"] = 0.0
-        else:
-            debug_img = frame.bgr if self.g_pool.display_mode == "algorithm" else None
-            result = self.detector_2d.detect(
-                gray_img=img,
-                color_img=debug_img,
-                roi=roi,
-            )
-        
-        # print("-----------------")
-        # for key, value in result.items():
-        #     #print(key + ": " + str(type(value)))
-        #     if not isinstance(value, dict) and not isinstance(value, bytes):
-        #         print(key + ": " + str(value))
-        #     elif isinstance(value, dict):
-        #         print(key + ":")
-        #         for key2, value2 in value.items():
-        #             print("- " + key2 + ": " + str(value2))
-        #     else:
-        #         print(key + ": " + str(type(value)))
-        eye_id = self.g_pool.eye_id
-        location = result["location"]
-        result["norm_pos"] = normalize(
-            location, (frame.width, frame.height), flip_y=True
-        )
-        result["timestamp"] = frame.timestamp
-        result["topic"] = f"pupil.{eye_id}.{self.identifier}"
-        result["id"] = eye_id
-        result["method"] = "2d c++"
-        #result["previous_detection_results"] = result.copy()
-        return result
-
-    @property
-    def pupil_detector(self) -> DetectorBase:
-        return self.detector_2d
 
     @property
     def pretty_class_name(self):
         return "Pupil Detector 2D"
 
-    def gl_display(self):
-        if self._recent_detection_result:
-            draw_pupil_outline(self._recent_detection_result, color_rgb=(0, 0.5, 1))
+    @property
+    def pupil_detector(self) -> DetectorBase:
+        return self.detector_2d
+
+    def __init__(
+        self,
+        g_pool=None,
+        properties=None,
+        detector_2d: Detector2D = None,
+    ):
+        super().__init__(g_pool=g_pool)
+        self.detector_2d = detector_2d or Detector2D(properties or {})
+
+    def detect(self, frame, **kwargs):
+        # convert roi-plugin to detector roi
+        roi = Roi(*self.g_pool.roi.bounds)
+
+        debug_img = frame.bgr if self.g_pool.display_mode == "algorithm" else None
+        result = self.detector_2d.detect(
+            gray_img=frame.gray,
+            color_img=debug_img,
+            roi=roi,
+        )
+
+        norm_pos = normalize(
+            result["location"], (frame.width, frame.height), flip_y=True
+        )
+
+        # Create basic pupil datum
+        datum = self.create_pupil_datum(
+            norm_pos=norm_pos,
+            diameter=result["diameter"],
+            confidence=result["confidence"],
+            timestamp=frame.timestamp,
+        )
+
+        # Fill out 2D model data
+        datum["ellipse"] = {}
+        datum["ellipse"]["axes"] = result["ellipse"]["axes"]
+        datum["ellipse"]["angle"] = result["ellipse"]["angle"]
+        datum["ellipse"]["center"] = result["ellipse"]["center"]
+
+        return datum
 
     def init_ui(self):
         super().init_ui()
@@ -137,8 +108,8 @@ class Detector2DPlugin(PupilDetectorPlugin):
         self.menu.append(info)
         self.menu.append(
             ui.Slider(
-                "2d.intensity_range",
-                self.proxy,
+                "intensity_range",
+                self.pupil_detector_properties,
                 label="Pupil intensity range",
                 min=0,
                 max=60,
@@ -147,8 +118,8 @@ class Detector2DPlugin(PupilDetectorPlugin):
         )
         self.menu.append(
             ui.Slider(
-                "2d.pupil_size_min",
-                self.proxy,
+                "pupil_size_min",
+                self.pupil_detector_properties,
                 label="Pupil min",
                 min=1,
                 max=250,
@@ -157,8 +128,8 @@ class Detector2DPlugin(PupilDetectorPlugin):
         )
         self.menu.append(
             ui.Slider(
-                "2d.pupil_size_max",
-                self.proxy,
+                "pupil_size_max",
+                self.pupil_detector_properties,
                 label="Pupil max",
                 min=50,
                 max=400,
@@ -172,3 +143,13 @@ class Detector2DPlugin(PupilDetectorPlugin):
                 label="Enable RITnet"
             )
         )
+
+    def gl_display(self):
+        if self._recent_detection_result:
+            draw_pupil_outline(self._recent_detection_result, color_rgb=(0, 0.5, 1))
+
+    def on_resolution_change(self, old_size, new_size):
+        properties = self.pupil_detector.get_properties()
+        properties["pupil_size_max"] *= new_size[0] / old_size[0]
+        properties["pupil_size_min"] *= new_size[0] / old_size[0]
+        self.pupil_detector.update_properties(properties)

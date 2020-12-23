@@ -12,21 +12,6 @@ sudo apt-get update
 sudo apt install -y pkg-config git cmake build-essential nasm wget python3-setuptools libusb-1.0-0-dev  python3-dev python3-pip python3-numpy python3-scipy libglew-dev libtbb-dev
 ```
 
-## glfw
-Pupil requires glfw v3.3.2, which you can install from source with:
-```sh
-sudo apt install xorg-dev
-git clone https://github.com/glfw/glfw
-cd glfw
-git checkout 3.3.2
-mkdir build
-cd build
-cmake -DBUILD_SHARED_LIBS=ON ..
-make
-sudo make install
-sudo ldconfig
-```
-
 ## ffmpeg3
 
 Install ffmpeg3 from jonathonf's ppa:
@@ -134,64 +119,17 @@ sudo udevadm trigger
 
 ## 3D Eye Model Dependencies
 ```sh
-sudo apt install -y libgoogle-glog-dev libatlas-base-dev libeigen3-dev
-```
-
-## Ceres
-
-You will need to build Ceres from source:
-```sh
-sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687
-sudo apt-get update
-sudo apt-get install libsuitesparse-dev
-```
-
-If `add-apt-repository` is not found, install the following package first:
-```sh
-sudo apt-get install software-properties-common
-```
-
-The build and install the Ceres solver:
-```sh
-git clone https://ceres-solver.googlesource.com/ceres-solver
-cd ceres-solver
-git checkout 1.14.0
-mkdir build && cd build
-cmake .. -DBUILD_SHARED_LIBS=ON
-make -j3
-make test
-sudo make install
-sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/ceres.conf'
-sudo ldconfig
+sudo apt install -y libeigen3-dev
 ```
 
 ### Install Python Libraries
 
-We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for running Pupil.
+We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for running Pupil. To install all Python dependencies, you can use the [`requirements.txt`](https://github.com/pupil-labs/pupil/blob/master/requirements.txt) file from the root of the `pupil` repository.
 
 ```sh
 # Upgrade pip to latest version. This is necessary for some dependencies.
-python -m pip install --upgrade pip
-
-pip install cysignals
-pip install cython
-pip install msgpack==0.5.6
-pip install numexpr
-pip install packaging
-pip install psutil
-pip install pyaudio
-pip install pyopengl
-pip install pyzmq
-pip install scikit-learn
-pip install scipy
-pip install git+https://github.com/zeromq/pyre
-
-pip install pupil-apriltags
-pip install pupil-detectors
-pip install git+https://github.com/pupil-labs/PyAV
-pip install git+https://github.com/pupil-labs/pyuvc
-pip install git+https://github.com/pupil-labs/pyndsi
-pip install git+https://github.com/pupil-labs/pyglui
+python -m pip install --upgrade pip wheel
+pip install -r requirements.txt
 ```
 
 **NOTE**: If you get the error `ImportError: No module named 'cv2'` when trying to run Pupil, please refer to the section [OpenCV Troubleshooting](#opencv-troubleshooting) above.

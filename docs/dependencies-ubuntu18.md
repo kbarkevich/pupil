@@ -12,27 +12,8 @@ sudo apt install -y pkg-config git cmake build-essential nasm wget python3-setup
 # ffmpeg >= 3.2
 sudo apt install -y libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev ffmpeg x264 x265 libportaudio2 portaudio19-dev
 
-# OpenCV >= 3
-sudo apt install -y python3-opencv libopencv-dev
-
-# 3D Eye model dependencies
-sudo apt install -y libgoogle-glog-dev libatlas-base-dev libeigen3-dev
-sudo apt install -y libceres-dev
-```
-
-## glfw
-Pupil requires glfw v3.3.2, which you can install from source with:
-```sh
-sudo apt install xorg-dev
-git clone https://github.com/glfw/glfw
-cd glfw
-git checkout 3.3.2
-mkdir build
-cd build
-cmake -DBUILD_SHARED_LIBS=ON ..
-make
-sudo make install
-sudo ldconfig
+# OpenCV >= 3 + Eigen
+sudo apt install -y python3-opencv libopencv-dev libeigen3-dev
 ```
 
 ## Turbojpeg
@@ -78,31 +59,12 @@ sudo udevadm trigger
 
 ### Install Python Libraries
 
-We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for running Pupil.
+We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) for running Pupil. To install all Python dependencies, you can use the [`requirements.txt`](https://github.com/pupil-labs/pupil/blob/master/requirements.txt) file from the root of the `pupil` repository.
 
 ```sh
 # Upgrade pip to latest version. This is necessary for some dependencies.
-python -m pip install --upgrade pip
-
-pip install cysignals
-pip install cython
-pip install msgpack==0.5.6
-pip install numexpr
-pip install packaging
-pip install psutil
-pip install pyaudio
-pip install pyopengl
-pip install pyzmq
-pip install scikit-learn
-pip install scipy
-pip install git+https://github.com/zeromq/pyre
-
-pip install pupil-apriltags
-pip install pupil-detectors
-pip install git+https://github.com/pupil-labs/PyAV
-pip install git+https://github.com/pupil-labs/pyuvc
-pip install git+https://github.com/pupil-labs/pyndsi
-pip install git+https://github.com/pupil-labs/pyglui
+python -m pip install --upgrade pip wheel
+pip install -r requirements.txt
 ```
 
 ### OpenCV Troubleshooting
